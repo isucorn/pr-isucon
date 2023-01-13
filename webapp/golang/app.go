@@ -175,10 +175,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	var posts []Post
 
 	for _, p := range results {
-		// err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
-		// if err != nil {
-		// 	return nil, err
-		// }
 		if _, ok := UsersCache[p.UserID]; ok {
 			p.User = *UsersCache[p.UserID]
 		} else {
