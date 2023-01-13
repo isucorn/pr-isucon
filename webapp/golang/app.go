@@ -150,8 +150,7 @@ func getSessionUser(r *http.Request) User {
 	}
 
 	u := User{}
-
-	err := db.Get(&u, "SELECT * FROM `users` WHERE `id` = ?", uid)
+	err := db.Get(&u, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", uid)
 	if err != nil {
 		return User{}
 	}
@@ -217,7 +216,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 				comments[i].User = *UsersCache[comments[i].UserID]
 				continue
 			}
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
+			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", comments[i].UserID)
 			if err != nil {
 				return nil, err
 			}
@@ -568,7 +567,7 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT * FROM `posts` WHERE `id` = ?", pid)
+	err = db.Select(&results, "SELECT * FROM `posts` WHERE `id` = ? LIMIT 1", pid)
 	if err != nil {
 		log.Print(err)
 		return
@@ -691,7 +690,7 @@ func getImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post := Post{}
-	err = db.Get(&post, "SELECT * FROM `posts` WHERE `id` = ?", pid)
+	err = db.Get(&post, "SELECT * FROM `posts` WHERE `id` = ? LIMIT 1", pid)
 	if err != nil {
 		log.Print(err)
 		return
