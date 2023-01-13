@@ -186,19 +186,20 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			continue
 		}
 
-		err = db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
-		if !allComments {
-			query += " LIMIT 3"
-		}
 		var comments []Comment
+		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
 		err = db.Select(&comments, query, p.ID)
 		if err != nil {
 			return nil, err
+		}
+		lc := len(comments)
+		p.CommentCount = lc
+		if !allComments {
+			l := 3
+			if l > lc {
+				l = lc
+			}
+			comments = comments[:l]
 		}
 
 		for i := 0; i < len(comments); i++ {
