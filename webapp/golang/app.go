@@ -173,11 +173,21 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
+	var UsersCache = make(map[int]User)
 
 	for _, p := range results {
 		err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
 		if err != nil {
 			return nil, err
+		}
+		if _, ok := UsersCache[p.UserID]; ok {
+			p.User = UsersCache[p.UserID]
+		} else {
+			err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
+			if err != nil {
+				return nil, err
+			}
+			UsersCache[p.UserID] = p.User
 		}
 
 		p.CSRFToken = csrfToken
@@ -203,10 +213,15 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		for i := 0; i < len(comments); i++ {
+			if _, ok := UsersCache[comments[i].UserID]; ok {
+				comments[i].User = UsersCache[comments[i].UserID]
+				continue
+			}
 			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
 			if err != nil {
 				return nil, err
 			}
+			UsersCache[comments[i].UserID] = comments[i].User
 		}
 
 		// reverse
@@ -222,7 +237,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			break
 		}
 	}
-
 	return posts, nil
 }
 
