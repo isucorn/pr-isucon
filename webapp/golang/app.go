@@ -468,17 +468,13 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	commentedCount := 0
 	if postCount > 0 {
-		s := []string{}
-		for range results {
-			s = append(s, "?")
-		}
-		placeholder := strings.Join(s, ", ")
-
-		// convert []int -> []interface{}
+		s := make([]string, postCount)
 		args := make([]interface{}, postCount)
 		for i, v := range results {
+			s[i] = "?"
 			args[i] = v.ID
 		}
+		placeholder := strings.Join(s, ", ")
 
 		err = db.Get(&commentedCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `post_id` IN ("+placeholder+")", args...)
 		if err != nil {
