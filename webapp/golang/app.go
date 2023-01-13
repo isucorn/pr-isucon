@@ -216,6 +216,8 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		p.Comments = comments
 
+		posts = append(posts, p)
+
 		if len(posts) >= postsPerPage {
 			break
 		}
