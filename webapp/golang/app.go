@@ -27,6 +27,7 @@ import (
 var (
 	db    *sqlx.DB
 	store *gsm.MemcacheStore
+	UsersCache = make(map[int]*User)
 )
 
 const (
@@ -175,9 +176,18 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	var posts []Post
 
 	for _, p := range results {
-		err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
-		if err != nil {
-			return nil, err
+		// err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		if _, ok := UsersCache[p.UserID]; ok {
+			p.User = *UsersCache[p.UserID]
+		} else {
+			err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
+			if err != nil {
+				return nil, err
+			}
+			UsersCache[p.UserID] = &p.User
 		}
 
 		p.CSRFToken = csrfToken
@@ -188,7 +198,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		var comments []Comment
 		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
-		err = db.Select(&comments, query, p.ID)
+		err := db.Select(&comments, query, p.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -203,10 +213,15 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		for i := 0; i < len(comments); i++ {
+			if _, ok := UsersCache[comments[i].UserID]; ok {
+				comments[i].User = *UsersCache[comments[i].UserID]
+				continue
+			}
 			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
 			if err != nil {
 				return nil, err
 			}
+			UsersCache[comments[i].UserID] = &comments[i].User
 		}
 
 		// reverse
@@ -222,7 +237,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			break
 		}
 	}
-
 	return posts, nil
 }
 
@@ -790,6 +804,12 @@ func postAdminBanned(w http.ResponseWriter, r *http.Request) {
 
 	for _, id := range r.Form["uid[]"] {
 		db.Exec(query, 1, id)
+		id_int, err := strconv.Atoi(id)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		UsersCache[id_int].DelFlg = 1
 	}
 
 	http.Redirect(w, r, "/admin/banned", http.StatusFound)
