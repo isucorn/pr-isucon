@@ -31,3 +31,5 @@ CREATE TABLE comments (
 
 CREATE INDEX idx_created_at ON comments(created_at DESC);
 CREATE INDEX idx_post_id ON comments(post_id);
+CREATE INDEX idx_created_at_posts ON posts(created_at DESC);
+CREATE INDEX idx_user_id ON comments(user_id);
