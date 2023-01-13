@@ -25,8 +25,8 @@ import (
 )
 
 var (
-	db    *sqlx.DB
-	store *gsm.MemcacheStore
+	db         *sqlx.DB
+	store      *gsm.MemcacheStore
 	UsersCache = make(map[int]*User)
 )
 
@@ -437,7 +437,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 	accountName := chi.URLParam(r, "accountName")
 	user := User{}
 
-	err := db.Get(&user, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0", accountName)
+	err := db.Get(&user, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0 LIMIT 1", accountName)
 	if err != nil {
 		log.Print(err)
 		return
@@ -445,6 +445,13 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	if user.ID == 0 {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	commentCount := 0
+	err = db.Get(&commentCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `user_id` = ?", user.ID)
+	if err != nil {
+		log.Print(err)
 		return
 	}
 
@@ -462,33 +469,20 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commentCount := 0
-	err = db.Get(&commentCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `user_id` = ?", user.ID)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	postIDs := []int{}
-	err = db.Select(&postIDs, "SELECT `id` FROM `posts` WHERE `user_id` = ?", user.ID)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	postCount := len(postIDs)
+	postCount := len(results)
 
 	commentedCount := 0
 	if postCount > 0 {
 		s := []string{}
-		for range postIDs {
+		for range results {
 			s = append(s, "?")
 		}
 		placeholder := strings.Join(s, ", ")
 
 		// convert []int -> []interface{}
-		args := make([]interface{}, len(postIDs))
-		for i, v := range postIDs {
-			args[i] = v
+		args := make([]interface{}, postCount)
+		for i, v := range results {
+			args[i] = v.ID
 		}
 
 		err = db.Get(&commentedCount, "SELECT COUNT(*) AS count FROM `comments` WHERE `post_id` IN ("+placeholder+")", args...)
