@@ -27,6 +27,7 @@ import (
 var (
 	db    *sqlx.DB
 	store *gsm.MemcacheStore
+	UsersCache = make(map[int]User)
 )
 
 const (
@@ -173,7 +174,6 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
-	var UsersCache = make(map[int]User)
 
 	for _, p := range results {
 		err := db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ? LIMIT 1", p.UserID)
