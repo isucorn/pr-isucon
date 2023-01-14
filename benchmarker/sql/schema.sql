@@ -32,6 +32,3 @@ CREATE TABLE comments (
   PRIMARY KEY pr_comments (`id` DESC)
 ) DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_post_id ON comments(post_id);
-CREATE INDEX idx_user_id ON comments(user_id);
-CREATE INDEX idx_created_post ON posts(created_at);
