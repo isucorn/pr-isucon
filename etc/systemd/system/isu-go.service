@@ -4,7 +4,7 @@ After=syslog.target
 
 [Service]
 WorkingDirectory=/home/isucon/pr-isucon/webapp/golang
-EnvironmentFile=/home/isucon/env.sh
+EnvironmentFile=/home/isucon/pr-isucon/env.sh
 Environment=RACK_ENV=production
 PIDFile=/home/isucon/pr-isucon/webapp/golang/server.pid
 
